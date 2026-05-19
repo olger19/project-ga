@@ -3,9 +3,10 @@ import { createGround } from '../physics/ground'
 import { Creature } from '../physics/creature'
 
 import { GeneticAlgorithm }  from '../ia/geneticAlgorithm.js'
+import { evaluateFitness } from '../ia/fitness.js'
 
-const POPULATION_SIZE = 20
-const SIMULATION_TIME = 1000
+const POPULATION_SIZE = 5
+const SIMULATION_TIME = 100
 
 export function startSimulation(
   generationRef,
@@ -18,8 +19,10 @@ export function startSimulation(
 
   const ga = new GeneticAlgorithm()
 
-  let creatures = []
+  let population = []
   let generation = 0
+  let currentCreature = null
+  let currentIndex = 0
 
   function randomGenes() {
 
@@ -32,7 +35,7 @@ export function startSimulation(
 
   function createPopulation(genesArray = null) {
 
-    creatures = []
+    population = []
 
     for (let i = 0; i < POPULATION_SIZE; i++) {
 
@@ -41,56 +44,57 @@ export function startSimulation(
           ? genesArray[i]
           : randomGenes()
 
-      const creature =
-        new Creature(
-          world,
-          200,
-          500,
-          genes
-        )
-
-      creatures.push(creature)
+      population.push({
+        genes,
+        fitness: 0
+      })
     }
+  }
+  // Crear la criatura en la posicion y tomar X y Y para crear el cuerpo en Creature.JS
+  function spawnCurrentCreature() {
+    if (currentCreature) {
+      currentCreature.remove()
+    }
+
+    const individual = population[currentIndex]
+    currentCreature = new Creature(world, 200, 500, individual.genes)
   }
 
   createPopulation()
+  spawnCurrentCreature()
 
   let ticks = 0
 
   setInterval(() => {
 
-    creatures.forEach(creature => {
-      creature.update()
-    })
+    currentCreature.update()
 
     ticks++
 
     if (ticks > SIMULATION_TIME) {
 
-      const evaluated =
-        creatures.map(creature => ({
-          genes: creature.genes,
-          fitness: creature.getFitness()
-        }))
+      population[currentIndex].fitness =
+        evaluateFitness(currentCreature)
 
-      evaluated.sort(
-        (a, b) => b.fitness - a.fitness
-      )
+      currentIndex++
 
-      bestFitnessRef.value =
-        evaluated[0].fitness
+      if (currentIndex >= population.length) {
+        population.sort(
+          (a, b) => b.fitness - a.fitness
+        )
 
-      generation++
+        bestFitnessRef.value = population[0].fitness
 
-      generationRef.value = generation
+        generation++
+        generationRef.value = generation
 
-      const nextGenes =
-        ga.nextGeneration(evaluated)
+        const nextGenes = ga.nextGeneration(population)
 
-      creatures.forEach(c => c.remove())
+        createPopulation(nextGenes)
+        currentIndex = 0
+      }
 
-      createPopulation(nextGenes)
-
+      spawnCurrentCreature()
       ticks = 0
     }
 
