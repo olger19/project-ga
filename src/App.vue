@@ -12,15 +12,15 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
-import { startSimulation } from './scenes/simulation'
+import { onMounted, ref } from "vue";
+import { startSimulation } from "./scenes/simulation";
 
-const generation = ref(0)
-const bestFitness = ref(0)
+const generation = ref(0);
+const bestFitness = ref(0);
 
 onMounted(() => {
-  startSimulation(generation, bestFitness)
-})
+  startSimulation(generation, bestFitness);
+});
 </script>
 
 <style>
