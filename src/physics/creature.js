@@ -12,7 +12,7 @@ export class Creature {
   constructor(world, x, y, genes) {
     this.world = world;
     this.genes = genes;
-
+    this.startX = x;
     this.time = 0;
 
     this.createBody(x, y);

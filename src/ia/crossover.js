@@ -1,7 +1,8 @@
+// Uniform
 export function crossover(parentA, parentB) {
-  const point = Math.floor(Math.random() * parentA.length);
-
-  const child = [...parentA.slice(0, point), ...parentB.slice(point)];
+  const child = parentA.map((gene, index) =>
+    Math.random() < 0.5 ? gene : parentB[index]
+  );
 
   return child;
 }

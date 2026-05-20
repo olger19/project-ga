@@ -6,7 +6,7 @@ import { GeneticAlgorithm } from "../ia/geneticAlgorithm.js";
 import { evaluateFitness } from "../ia/fitness.js";
 
 const POPULATION_SIZE = 20;
-const SIMULATION_TIME = 100;
+const SIMULATION_TIME = 300;
 
 export function startSimulation(generationRef, bestFitnessRef) {
   const { world } = createWorld();
@@ -43,7 +43,7 @@ export function startSimulation(generationRef, bestFitnessRef) {
     }
 
     const individual = population[currentIndex];
-    currentCreature = new Creature(world, 100, 570, individual.genes);
+    currentCreature = new Creature(world, 100, 578, individual.genes);
   }
 
   createPopulation();
