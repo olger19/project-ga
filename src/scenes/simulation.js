@@ -1,6 +1,6 @@
 import { createWorld } from "../physics/world.js";
 import { createGround } from "../physics/ground";
-import { Creature, OBSERVATION_SIZE, ACTION_SIZE, GENE_SIZE } from "../physics/creature";
+import { Creature, GENE_SIZE, POLICY_GENE_SIZE } from "../physics/creature";
 
 import { GeneticAlgorithm } from "../ia/geneticAlgorithm.js";
 import { evaluateFitness } from "../ia/fitness.js";
@@ -8,11 +8,12 @@ import { evaluateFitness } from "../ia/fitness.js";
 const POPULATION_SIZE = 20;
 const SIMULATION_TIME = 500;
 const GENE_COUNT = GENE_SIZE;
+const BODY_TO_FEET_OFFSET = 70;
 
 export function startSimulation(generationRef, bestFitnessRef) {
   const { world } = createWorld();
 
-  createGround(world);
+  const { groundTop } = createGround(world);
 
   const ga = new GeneticAlgorithm();
 
@@ -22,7 +23,14 @@ export function startSimulation(generationRef, bestFitnessRef) {
   let currentIndex = 0;
 
   function randomGenes() {
-    return Array.from({ length: GENE_COUNT }, () => (Math.random() * 2 - 1) * 0.8);
+    const genes = Array.from({ length: GENE_COUNT }, (_, index) => {
+      if (index < POLICY_GENE_SIZE) {
+        return (Math.random() * 2 - 1) * 0.8;
+      }
+      return (Math.random() * 2 - 1) * 0.2;
+    });
+
+    return genes;
   }
 
   function createPopulation(genesArray = null) {
@@ -44,7 +52,8 @@ export function startSimulation(generationRef, bestFitnessRef) {
     }
 
     const individual = population[currentIndex];
-    currentCreature = new Creature(world, 100, 578, individual.genes);
+    const spawnY = groundTop - BODY_TO_FEET_OFFSET;
+    currentCreature = new Creature(world, 100, spawnY, individual.genes);
   }
 
   createPopulation();

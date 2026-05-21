@@ -1,6 +1,7 @@
 import { tournamentSelection } from "./selection";
 import { crossover } from "./crossover";
 import { mutate } from "./mutation";
+import { POLICY_GENE_SIZE } from "../physics/creature";
 
 export class GeneticAlgorithm {
   constructor() {
@@ -15,7 +16,8 @@ export class GeneticAlgorithm {
     for (let i = 0; i < this.hcNeighborsPerElite; i++) {
       const index = Math.floor(Math.random() * genes.length);
       const direction = Math.random() < 0.5 ? -1 : 1;
-      const step = direction * this.hcStepSize * (0.5 + Math.random());
+      const stepScale = index < POLICY_GENE_SIZE ? 1 : 0.4;
+      const step = direction * this.hcStepSize * stepScale * (0.5 + Math.random());
 
       const neighbor = [...genes];
       neighbor[index] = neighbor[index] + step;

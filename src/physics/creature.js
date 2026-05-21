@@ -7,13 +7,15 @@ const { Bodies, Constraint, Composite, Body } = Matter;
 //     Actualizar en el GA: GENE_SIZE = OBSERVATION_SIZE * ACTION_SIZE + ACTION_SIZE = 44
 export const OBSERVATION_SIZE = 10;
 export const ACTION_SIZE      = 4;
-export const GENE_SIZE        = OBSERVATION_SIZE * ACTION_SIZE + ACTION_SIZE; // 44
+export const POLICY_GENE_SIZE = OBSERVATION_SIZE * ACTION_SIZE + ACTION_SIZE; // 44
+export const CONTROL_PARAM_SIZE = 6;
+export const GENE_SIZE = POLICY_GENE_SIZE + CONTROL_PARAM_SIZE; // 50
 
 // ─── Generador Central de Patrones (CPG) ─────────────────────────────────────
 // Sin esta señal la política solo reacciona a su propio estado ruidoso
 // y nunca converge a un patrón rítmico estable.
 // Con sin/cos el gen puede aprender a sincronizar las piernas con un "reloj" externo.
-const CPG_FREQ = 1.8; // frecuencia del oscilador (ajustable)
+const DEFAULT_CPG_FREQ = 1.8; // frecuencia del oscilador (ajustable)
 
 // ─── Límites angulares de cada articulación (rad, relativo al segmento padre) ─
 const HIP_ANGLE_RANGE = 0.72; // cadera: ±0.72 rad (~41°)
@@ -28,13 +30,13 @@ const KNEE_ANGLE_MAX  = 1.25; // rodilla doblada (~72°) — solo dobla hacia ad
 //
 //  Solución: KP más bajo (corrección suave) + KD alto (amortiguación fuerte).
 //
-const KP_HIP  = 4.5;  // era 10.0 — corrección más gradual
-const KP_KNEE = 3.5;  // era  8.0
-const KD      = 0.95; // era  0.6 — amortiguación más fuerte (menos rebote)
+const DEFAULT_KP_HIP  = 4.5;  // era 10.0 — corrección más gradual
+const DEFAULT_KP_KNEE = 3.5;  // era  8.0
+const DEFAULT_KD      = 0.95; // era  0.6 — amortiguación más fuerte (menos rebote)
 
 // ─── Velocidades angulares máximas ───────────────────────────────────────────
-const MAX_HIP_SPEED  = 0.38;
-const MAX_KNEE_SPEED = 0.52;
+const DEFAULT_MAX_HIP_SPEED  = 0.38;
+const DEFAULT_MAX_KNEE_SPEED = 0.52;
 
 // ─── Suavizado temporal de targets ───────────────────────────────────────────
 // Con 0.12 el target sigue al valor deseado lentamente (constante τ ≈ 8 pasos).
@@ -43,6 +45,10 @@ const ACTION_SMOOTHING = 0.12; // era 0.25
 
 // ─── Límite de giro del torso ─────────────────────────────────────────────────
 const MAX_BODY_ANGULAR_SPEED = 0.28;
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
 
 const CREATURE_COLORS = {
   body:  "#ff7043",
@@ -74,8 +80,26 @@ export class Creature {
 
     // Targets previos suavizados — posición neutral al arrancar
     this.prevTargets = [0, 0, KNEE_ANGLE_MAX * 0.3, KNEE_ANGLE_MAX * 0.3];
+    this.initControlParams();
 
     this.createBody(x, y);
+  }
+
+  initControlParams() {
+    const start = POLICY_GENE_SIZE;
+    const cpgFreqGene = this.genes[start] ?? 0;
+    const kpHipGene = this.genes[start + 1] ?? 0;
+    const kpKneeGene = this.genes[start + 2] ?? 0;
+    const kdGene = this.genes[start + 3] ?? 0;
+    const maxHipSpeedGene = this.genes[start + 4] ?? 0;
+    const maxKneeSpeedGene = this.genes[start + 5] ?? 0;
+
+    this.cpgFreq = clamp(DEFAULT_CPG_FREQ + cpgFreqGene * 0.6, 0.8, 3.2);
+    this.kpHip = clamp(DEFAULT_KP_HIP + kpHipGene * 1.5, 1.5, 8);
+    this.kpKnee = clamp(DEFAULT_KP_KNEE + kpKneeGene * 1.3, 1.2, 7);
+    this.kd = clamp(DEFAULT_KD + kdGene * 0.45, 0.25, 1.6);
+    this.maxHipSpeed = clamp(DEFAULT_MAX_HIP_SPEED + maxHipSpeedGene * 0.2, 0.15, 0.8);
+    this.maxKneeSpeed = clamp(DEFAULT_MAX_KNEE_SPEED + maxKneeSpeedGene * 0.25, 0.18, 0.95);
   }
 
   // ── Observación con CPG ───────────────────────────────────────────────────
@@ -96,8 +120,8 @@ export class Creature {
       this.leg2.angle  - this.body.angle,   // cadera der. relativa al torso
       this.calf1.angle - this.leg1.angle,   // rodilla izq. relativa al muslo
       this.calf2.angle - this.leg2.angle,   // rodilla der. relativa al muslo
-      Math.sin(this.time * CPG_FREQ),       // ← oscilador A (fase 0°)
-      Math.cos(this.time * CPG_FREQ),       // ← oscilador B (fase 90°)
+      Math.sin(this.time * this.cpgFreq),       // ← oscilador A (fase 0°)
+      Math.cos(this.time * this.cpgFreq),       // ← oscilador B (fase 90°)
     ];
   }
 
@@ -213,10 +237,10 @@ export class Creature {
     this.prevRelKnee1 = relKnee1;
     this.prevRelKnee2 = relKnee2;
 
-    const avHip1  = Math.tanh(KP_HIP  * (targets[0] - relHip1)  - KD * this.leg1.angularVelocity)  * MAX_HIP_SPEED;
-    const avHip2  = Math.tanh(KP_HIP  * (targets[1] - relHip2)  - KD * this.leg2.angularVelocity)  * MAX_HIP_SPEED;
-    const avKnee1 = Math.tanh(KP_KNEE * (targets[2] - relKnee1) - KD * this.calf1.angularVelocity) * MAX_KNEE_SPEED;
-    const avKnee2 = Math.tanh(KP_KNEE * (targets[3] - relKnee2) - KD * this.calf2.angularVelocity) * MAX_KNEE_SPEED;
+    const avHip1  = Math.tanh(this.kpHip  * (targets[0] - relHip1)  - this.kd * this.leg1.angularVelocity)  * this.maxHipSpeed;
+    const avHip2  = Math.tanh(this.kpHip  * (targets[1] - relHip2)  - this.kd * this.leg2.angularVelocity)  * this.maxHipSpeed;
+    const avKnee1 = Math.tanh(this.kpKnee * (targets[2] - relKnee1) - this.kd * this.calf1.angularVelocity) * this.maxKneeSpeed;
+    const avKnee2 = Math.tanh(this.kpKnee * (targets[3] - relKnee2) - this.kd * this.calf2.angularVelocity) * this.maxKneeSpeed;
 
     Body.setAngularVelocity(this.leg1,  avHip1);
     Body.setAngularVelocity(this.leg2,  avHip2);
