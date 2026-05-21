@@ -18,6 +18,7 @@ import { startSimulation } from "./scenes/simulation";
 const generation = ref(0);
 const bestFitness = ref(0);
 
+// onMounted: Inicia la simulación cuando el componente se monta
 onMounted(() => {
   startSimulation(generation, bestFitness);
 });
