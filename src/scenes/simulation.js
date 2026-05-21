@@ -10,7 +10,7 @@ const SIMULATION_TIME = 500;
 const GENE_COUNT = GENE_SIZE;
 const BODY_TO_FEET_OFFSET = 70;
 
-export function startSimulation(generationRef, bestFitnessRef) {
+export function startSimulation(generationRef, bestFitnessRef, stats = null) {
   const { world } = createWorld();
 
   const { groundTop } = createGround(world);
@@ -21,6 +21,7 @@ export function startSimulation(generationRef, bestFitnessRef) {
   let generation = 0;
   let currentCreature = null;
   let currentIndex = 0;
+  let generationFitnessSum = 0;
 
   function randomGenes() {
     const genes = Array.from({ length: GENE_COUNT }, (_, index) => {
@@ -60,14 +61,33 @@ export function startSimulation(generationRef, bestFitnessRef) {
   spawnCurrentCreature();
 
   let ticks = 0;
+  const TICK_MS = 16;
 
   setInterval(() => {
     currentCreature.update();
+    const currentFitness = evaluateFitness(currentCreature);
 
     ticks++;
+    const elapsedSeconds = (ticks * TICK_MS) / 1000;
+
+    if (stats) {
+      if (stats.currentIndividualRef) {
+        stats.currentIndividualRef.value = currentIndex + 1;
+      }
+      if (stats.populationSizeRef) {
+        stats.populationSizeRef.value = POPULATION_SIZE;
+      }
+      if (stats.episodeTimeRef) {
+        stats.episodeTimeRef.value = elapsedSeconds;
+      }
+      if (stats.currentFitnessRef) {
+        stats.currentFitnessRef.value = currentFitness;
+      }
+    }
 
     if (ticks > SIMULATION_TIME) {
-      population[currentIndex].fitness = evaluateFitness(currentCreature);
+      population[currentIndex].fitness = currentFitness;
+      generationFitnessSum += currentFitness;
 
       currentIndex++;
 
@@ -81,12 +101,17 @@ export function startSimulation(generationRef, bestFitnessRef) {
 
         const nextGenes = ga.nextGeneration(population);
 
+        if (stats.generationAvgFitnessRef) {
+          stats.generationAvgFitnessRef.value = generationFitnessSum / POPULATION_SIZE;
+        }
+
         createPopulation(nextGenes);
         currentIndex = 0;
+        generationFitnessSum = 0;
       }
 
       spawnCurrentCreature();
       ticks = 0;
     }
-  }, 16);
+  }, TICK_MS);
 }
