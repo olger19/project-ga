@@ -7,6 +7,7 @@ const {
   World
 } = Matter
 
+// createWorld: Inicializa el motor de física y el renderizado
 export function createWorld() {
 
   const engine = Engine.create()

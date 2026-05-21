@@ -1,3 +1,4 @@
+// Selection: Funcion que selecciona a los mejores individuos para reproducirse
 export function tournamentSelection(population) {
   const size = 3;
 
