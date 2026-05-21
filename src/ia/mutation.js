@@ -1,14 +1,15 @@
 export function mutate(genes) {
-
-  const mutationRate = 0.1
+  const mutationRate = 0.12
+  const mutationStep = 0.25
+  const minValue = -2
+  const maxValue = 2
 
   return genes.map(gene => {
-
     if (Math.random() < mutationRate) {
-
-      return gene + (Math.random() - 0.5)
+      const mutated = gene + (Math.random() * 2 - 1) * mutationStep
+      return Math.max(minValue, Math.min(maxValue, mutated))
     }
 
-    return gene
+    return Math.max(minValue, Math.min(maxValue, gene))
   })
 }
