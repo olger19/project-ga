@@ -1,5 +1,32 @@
-# Vue 3 + Vite
+# Genetic Walker (Vue + Matter.js + Genetic Algorithm)
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Proyecto de simulacion de un caminante bipedo usando:
+- Vue 3 + Vite para la interfaz
+- Matter.js para la fisica
+- Algoritmo genetico para evolucionar el control del bipedo
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+## Requisitos
+- Node.js 18 o superior
+- npm
+
+## Instalacion
+```bash
+npm install
+```
+
+## Ejecucion
+```bash
+npm run dev
+```
+
+## Estructura principal
+- `src/scenes/simulation.js`: ciclo de simulacion, evaluacion por episodios y avance de generaciones.
+- `src/physics/creature.js`: definicion del bipedo, articulaciones y controlador.
+- `src/physics/ground.js`: configuracion del suelo.
+- `src/ia/fitness.js`: funcion de fitness (recompensas y penalizaciones).
+- `src/ia/geneticAlgorithm.js`: seleccion, cruce, mutacion y elitismo.
+
+## Integrantes
+1. Olger Quispe Vilca
+2. Jorge Olivera Ticona
+3. Juan Quispe Luque
