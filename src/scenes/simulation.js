@@ -7,6 +7,9 @@ import { evaluateFitness } from "../ia/fitness.js";
 
 const POPULATION_SIZE = 20;
 const SIMULATION_TIME = 300;
+const OBSERVATION_SIZE = 8;
+const ACTION_SIZE = 4;
+const GENE_COUNT = OBSERVATION_SIZE * ACTION_SIZE + ACTION_SIZE;
 
 export function startSimulation(generationRef, bestFitnessRef) {
   const { world } = createWorld();
@@ -21,7 +24,7 @@ export function startSimulation(generationRef, bestFitnessRef) {
   let currentIndex = 0;
 
   function randomGenes() {
-    return [Math.random() * 0.1, Math.random() * 2, Math.random() * 0.05];
+    return Array.from({ length: GENE_COUNT }, () => (Math.random() * 2 - 1) * 0.8);
   }
 
   function createPopulation(genesArray = null) {
