@@ -46,8 +46,8 @@ const MAX_BODY_ANGULAR_SPEED = 0.28;
 
 const CREATURE_COLORS = {
   body:  "#ff7043",
-  thigh: "#42a5f5",
-  calf:  "#26a69a",
+  thigh: "#42a5f5", // Muslo
+  calf:  "#26a69a", // Pierna
   joint: "#eceff1",
 };
 
@@ -67,6 +67,10 @@ export class Creature {
     this.fallCount        = 0;
     this.bodyGroundContactCount = 0;
     this.bodyRollCount = 0;
+    this.cumulativeJitter = 0;
+    this.cumulativeKneeJitter = 0;
+    this.prevRelKnee1 = 0;
+    this.prevRelKnee2 = 0;
 
     // Targets previos suavizados — posición neutral al arrancar
     this.prevTargets = [0, 0, KNEE_ANGLE_MAX * 0.3, KNEE_ANGLE_MAX * 0.3];
@@ -179,10 +183,15 @@ export class Creature {
     // ── 2. Low-pass filter temporal sobre los targets ─────────────────────────
     //  Evita que un cambio brusco en la salida de la política se traduzca
     //  inmediatamente en un movimiento brusco de la articulación.
+    const previousTargets = [...this.prevTargets];
     const targets = rawTargets.map((t, i) =>
       this.prevTargets[i] * (1 - ACTION_SMOOTHING) + t * ACTION_SMOOTHING
     );
     this.prevTargets = targets;
+    this.cumulativeJitter += targets.reduce(
+      (acc, target, i) => acc + Math.abs(target - previousTargets[i]),
+      0
+    );
 
     // ── 3. Controlador PD por articulación ────────────────────────────────────
     //
@@ -197,6 +206,12 @@ export class Creature {
     const relHip2  = this.leg2.angle  - this.body.angle;
     const relKnee1 = this.calf1.angle - this.leg1.angle;
     const relKnee2 = this.calf2.angle - this.leg2.angle;
+
+    this.cumulativeKneeJitter +=
+      Math.abs(relKnee1 - this.prevRelKnee1) +
+      Math.abs(relKnee2 - this.prevRelKnee2);
+    this.prevRelKnee1 = relKnee1;
+    this.prevRelKnee2 = relKnee2;
 
     const avHip1  = Math.tanh(KP_HIP  * (targets[0] - relHip1)  - KD * this.leg1.angularVelocity)  * MAX_HIP_SPEED;
     const avHip2  = Math.tanh(KP_HIP  * (targets[1] - relHip2)  - KD * this.leg2.angularVelocity)  * MAX_HIP_SPEED;
