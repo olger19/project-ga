@@ -1,6 +1,6 @@
 export function mutate(genes) {
-  const mutationRate = 0.12
-  const mutationStep = 0.25
+  const mutationRate = 0.08
+  const mutationStep = 0.15
   const minValue = -2
   const maxValue = 2
 

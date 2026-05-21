@@ -1,15 +1,13 @@
 import { createWorld } from "../physics/world.js";
 import { createGround } from "../physics/ground";
-import { Creature } from "../physics/creature";
+import { Creature, OBSERVATION_SIZE, ACTION_SIZE, GENE_SIZE } from "../physics/creature";
 
 import { GeneticAlgorithm } from "../ia/geneticAlgorithm.js";
 import { evaluateFitness } from "../ia/fitness.js";
 
 const POPULATION_SIZE = 20;
-const SIMULATION_TIME = 300;
-const OBSERVATION_SIZE = 8;
-const ACTION_SIZE = 4;
-const GENE_COUNT = OBSERVATION_SIZE * ACTION_SIZE + ACTION_SIZE;
+const SIMULATION_TIME = 500;
+const GENE_COUNT = GENE_SIZE;
 
 export function startSimulation(generationRef, bestFitnessRef) {
   const { world } = createWorld();
